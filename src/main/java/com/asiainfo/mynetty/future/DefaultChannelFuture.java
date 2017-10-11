@@ -1,9 +1,14 @@
 package com.asiainfo.mynetty.future;
 
-import java.nio.channels.Channel;
+import java.nio.channels.SelectableChannel;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Future;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.asiainfo.mynetty.pipeline.ChannelPipeline;
 
 /**
  * @Description: TODO
@@ -13,14 +18,16 @@ import java.util.concurrent.Future;
  * Copyright: 	  北京亚信智慧数据科技有限公司
  */
 public class DefaultChannelFuture implements ChannelFuture {
-
-	private Channel channel;
-	private Future<Void> future;
-	private List<FutureListener> listeners = new ArrayList<>();
-	final Object obj = new Object();
 	
-	public DefaultChannelFuture setChannel(Channel channel) {
-		this.channel = channel;
+	final Logger logger = LoggerFactory.getLogger(getClass());
+
+	protected ChannelPipeline pipeline;
+	protected Future<Void> future;
+	protected List<FutureListener> listeners = new ArrayList<>();
+	protected final Object obj = new Object();
+	
+	public DefaultChannelFuture setPipeline(ChannelPipeline pipeline) {
+		this.pipeline = pipeline;
 		return this;
 	}
 	public DefaultChannelFuture setFuture(Future<Void> future) {
@@ -34,10 +41,20 @@ public class DefaultChannelFuture implements ChannelFuture {
 	 * @see com.asiainfo.mynetty.future.ChannelFuture#channel()
 	 */
 	@Override
-	public Channel channel() {
-		return this.channel;
+	public SelectableChannel channel() {
+		return this.pipeline.channel();
 	}
-
+	
+	/* 
+	 * @Description: TODO
+	 * @return
+	 * @see com.asiainfo.mynetty.future.ChannelFuture#pipeline()
+	 */
+	@Override
+	public ChannelPipeline pipeline() {
+		return this.pipeline;
+	}
+	
 	/* 
 	 * @Description: TODO
 	 * @param listener
@@ -46,6 +63,8 @@ public class DefaultChannelFuture implements ChannelFuture {
 	 */
 	@Override
 	public ChannelFuture addListener(FutureListener listener) {
+		
+		logger.debug("addListener()...");
 		this.listeners.add(listener);
 		return this;
 	}
@@ -58,6 +77,8 @@ public class DefaultChannelFuture implements ChannelFuture {
 	 */
 	@Override
 	public void sync() throws Exception {
+		
+		logger.debug("sync()...");
 		future.get();
 	}
 
@@ -68,6 +89,8 @@ public class DefaultChannelFuture implements ChannelFuture {
 	 */
 	@Override
 	public void await() throws Exception {
+		
+		logger.debug("await()...");
 		synchronized(this.obj) {
 			this.obj.wait();
 		}
@@ -79,7 +102,8 @@ public class DefaultChannelFuture implements ChannelFuture {
 	 */
 	@Override
 	public void notifier() {
-
+		
+		logger.debug("notifier()...");
 		synchronized(this.obj) {
 			this.obj.notify();
 		}
@@ -93,6 +117,7 @@ public class DefaultChannelFuture implements ChannelFuture {
 	@Override
 	public void done() {
 		
+		logger.debug("done()...");
 		try {
 			for (FutureListener listener : listeners) {
 				listener.operationComplete(this);
@@ -109,13 +134,6 @@ public class DefaultChannelFuture implements ChannelFuture {
 	 */
 	@Override
 	public ChannelFuture closeFuture() {
-		return new DefaultChannelFuture() {
-			@Override
-			public void sync() throws Exception {
-				synchronized(this.obj) {
-					this.obj.wait();
-				}
-			}
-		}.setChannel(channel).setFuture(null);
+		return this.pipeline.closeFuture();
 	}
 }

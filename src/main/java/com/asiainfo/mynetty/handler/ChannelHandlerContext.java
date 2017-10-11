@@ -131,7 +131,8 @@ public class ChannelHandlerContext {
 			}
 		}
 		else {
-			this.pipeline.getChannel().write(ByteBuffer.wrap((byte[]) msg));
+			logger.debug("finally write!");
+			this.pipeline.socketChannel().write(ByteBuffer.wrap((byte[]) msg));
 		}
 	}
 	
@@ -149,6 +150,7 @@ public class ChannelHandlerContext {
 		}
 		else {
 			logger.debug("finally flush!");
+			this.pipeline.socketChannel().socket().getOutputStream().flush();
 		}
 	}
 }

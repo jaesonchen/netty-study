@@ -20,13 +20,13 @@ public class ReleaseUtil {
 	
 	public static void release(ChannelHandlerContext ctx) {
 		logger.debug("release message!");
-		ctx.pipeline().getBuffer().reset();
+		ctx.pipeline().buffer().reset();
 	}
 	
 	public static void release(ChannelHandlerContext ctx, int length) {
 		
 		logger.debug("release message, length={}!", length);
-		ByteArrayOutputStream buff = ctx.pipeline().getBuffer();
+		ByteArrayOutputStream buff = ctx.pipeline().buffer();
 		byte[] bt = buff.toByteArray();
 		buff.reset();
 		if (bt.length == length) {

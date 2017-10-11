@@ -1,7 +1,5 @@
 package com.asiainfo.mynetty.future;
 
-import java.io.IOException;
-
 /**
  * @Description: TODO
  * 
@@ -10,13 +8,14 @@ import java.io.IOException;
  * Copyright: 	  北京亚信智慧数据科技有限公司
  */
 public interface FutureListener {
-
+	
 	void operationComplete(ChannelFuture future) throws Exception;
 	
 	FutureListener CLOSE = new FutureListener() {
         @Override
-        public void operationComplete(ChannelFuture future) throws IOException {
-            future.channel().close();
+        public void operationComplete(ChannelFuture future) throws Exception {
+        	System.out.println("FutureListener.CLOSE.operationComplete()!");
+            future.pipeline().close();
         }
     };
 }

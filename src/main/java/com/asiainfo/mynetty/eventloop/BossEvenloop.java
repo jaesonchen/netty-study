@@ -55,7 +55,7 @@ public class BossEvenloop extends AbstractEventLoop implements Boss {
     		// 获取一个worker
     		Worker nextworker = this.getEventLoopGroup().nextWorker();
     		// 注册新客户端接入任务
-    		nextworker.registerChannel(channel);
+    		nextworker.registerChannel(channel, SelectionKey.OP_READ, null);
         }
 	}
 	
@@ -85,7 +85,9 @@ public class BossEvenloop extends AbstractEventLoop implements Boss {
 				} catch (ClosedChannelException e) {
 					e.printStackTrace();
 				} finally {
-					future.notifier();
+					if (null != future) {
+						future.notifier();
+					}
 				}
 			}
 		});

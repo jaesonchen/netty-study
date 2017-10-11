@@ -2,6 +2,8 @@ package com.asiainfo.mynetty.eventloop;
 
 import java.nio.channels.SocketChannel;
 
+import com.asiainfo.mynetty.future.ChannelFuture;
+
 /**
  * 
  * @Description: worker接口
@@ -16,5 +18,5 @@ public interface Worker {
 	 * 加入一个新的客户端会话
 	 * @param channel
 	 */
-	public void registerChannel(SocketChannel channel);
+	public void registerChannel(SocketChannel channel, int op, ChannelFuture future);
 }

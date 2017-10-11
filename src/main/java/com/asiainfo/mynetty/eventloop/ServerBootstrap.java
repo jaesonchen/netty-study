@@ -12,6 +12,7 @@ import com.asiainfo.mynetty.future.ChannelFuture;
 import com.asiainfo.mynetty.future.DefaultChannelFuture;
 import com.asiainfo.mynetty.handler.Context;
 import com.asiainfo.mynetty.pipeline.ChannelInitializer;
+import com.asiainfo.mynetty.pipeline.ChannelPipeline;
 import com.asiainfo.mynetty.pipeline.ExecutorTools;
 
 /**
@@ -45,10 +46,8 @@ public class ServerBootstrap {
     	ServerSocketChannel ssChannel = ServerSocketChannel.open();
     	// 设置通道为非阻塞
     	ssChannel.configureBlocking(false);
-    	// 将该通道对应的ServerSocket绑定到port端口
-    	ssChannel.socket().bind(localAddress);
     	
-        return executeServerChannel(ssChannel);
+        return executeServerChannel(ssChannel, localAddress);
     }
     
     /**
@@ -64,12 +63,14 @@ public class ServerBootstrap {
     	return this;
     }
     
-    protected ChannelFuture executeServerChannel(final ServerSocketChannel ssChannel) {
+    protected ChannelFuture executeServerChannel(final ServerSocketChannel ssChannel, final InetSocketAddress localAddress) {
     	
     	final DefaultChannelFuture future = new DefaultChannelFuture();
     	Callable<Void> callable = new Callable<Void>() {
 			@Override
 			public Void call() throws Exception {
+		    	// 将该通道对应的ServerSocket绑定到port端口
+		    	ssChannel.socket().bind(localAddress);
 				//获取一个boss线程
 		    	Boss nextBoss = ServerBootstrap.this.group.nextBoss();
 		    	//向boss注册一个ServerSocket通道
@@ -80,7 +81,7 @@ public class ServerBootstrap {
 			}
     	};
     	
-    	future.setChannel(ssChannel).setFuture(ExecutorTools.getInstance().getExecutor().submit(callable));
-    	return future;
+    	return future.setPipeline(new ChannelPipeline(null))
+    			.setFuture(ExecutorTools.getInstance().getExecutor().submit(callable));
     }
 }

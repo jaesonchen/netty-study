@@ -1,6 +1,8 @@
 package com.asiainfo.mynetty.future;
 
-import java.nio.channels.Channel;
+import java.nio.channels.SelectableChannel;
+
+import com.asiainfo.mynetty.pipeline.ChannelPipeline;
 
 /**
  * @Description: TODO
@@ -11,7 +13,9 @@ import java.nio.channels.Channel;
  */
 public interface ChannelFuture {
 
-	Channel channel();
+	SelectableChannel channel();
+	
+	ChannelPipeline pipeline();
 	
 	ChannelFuture addListener(FutureListener listener);
 	

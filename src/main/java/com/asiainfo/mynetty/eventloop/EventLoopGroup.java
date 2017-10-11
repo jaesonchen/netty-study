@@ -1,6 +1,8 @@
 package com.asiainfo.mynetty.eventloop;
 
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.slf4j.Logger;
@@ -30,6 +32,9 @@ public class EventLoopGroup {
 	private final AtomicInteger workerIndex = new AtomicInteger();
 	private Worker[] workers;
 
+	public EventLoopGroup(Executor worker, int workNum) {
+		initWorker(worker, workNum);
+	}
 	
 	public EventLoopGroup(Executor boss, Executor worker, int bossNum, int workNum) {
 		initBoss(boss, bossNum);
@@ -79,4 +84,24 @@ public class EventLoopGroup {
 	public Boss nextBoss() {
 		 return bosses[Math.abs(bossIndex.getAndIncrement() % bosses.length)];
 	}
+	
+	protected void shutdownAndAwaitTermination(ExecutorService pool) {
+		
+		pool.shutdown(); // Disable new tasks from being submitted  
+		try {
+			// Wait a while for existing tasks to terminate  
+			if (!pool.awaitTermination(1, TimeUnit.SECONDS)) {
+				pool.shutdownNow(); // Cancel currently executing tasks  
+				// Wait a while for tasks to respond to being cancelled  
+				if (!pool.awaitTermination(1, TimeUnit.SECONDS)) {
+					System.err.println("Pool did not terminate");
+				}
+			}
+		} catch (InterruptedException ie) {
+			// (Re-)Cancel if current thread also interrupted  
+			pool.shutdownNow();
+			// Preserve interrupt status  
+			Thread.currentThread().interrupt();
+		}  
+	}  
 }

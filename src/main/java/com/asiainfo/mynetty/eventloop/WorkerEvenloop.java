@@ -12,7 +12,8 @@ import java.util.concurrent.Executor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.asiainfo.mynetty.handler.Context;
+import com.asiainfo.mynetty.future.ChannelFuture;
+import com.asiainfo.mynetty.future.DefaultChannelFuture;
 import com.asiainfo.mynetty.pipeline.ChannelPipeline;
 
 /**
@@ -46,72 +47,91 @@ public class WorkerEvenloop extends AbstractEventLoop implements Worker {
             // 移除，防止重复处理
             it.remove();
 
-            logger.debug("worker process read event!");
-            // 得到事件发生的Socket通道
-            SocketChannel channel = (SocketChannel) key.channel();
-            
+            logger.info("worker process event!");
             //pipeline对象
             final ChannelPipeline pipeline = (ChannelPipeline) key.attachment();
-            
-            // 读取数据
-            int read = 0;
-            int count = 0;
-            boolean disconnect = true;
-            ByteBuffer buffer = ByteBuffer.allocate(1024);
-            try {
-            	while ((read = channel.read(buffer)) > 0) {
-            		count += read;
-            		//写入输入缓存中
-                    buffer.flip();
-                    while (buffer.hasRemaining()) {
-                    	pipeline.getBuffer().write(buffer.get());
-                    }
-                    buffer.clear();
-            	}
-            	disconnect = false;
-            } catch (IOException ex) {
-            	//ignore
-            }
-            
-            //判断是否连接已断开
-            if (count == 0 || disconnect) {
-            	logger.warn("channel is close, cancel key!");
-                key.cancel();
-                logger.debug("fire channel inactive!");
-                try {
-                	//channel inactive
-					pipeline.fireChannelInactive();
-				} catch (Exception e) {
-					// ignore
+            // a connection was established with a remote server.
+            if (key.isConnectable()) {
+            	
+            	logger.info("worker process connect!");
+            	SocketChannel channel = (SocketChannel) key.channel();
+            	if(channel.isConnectionPending()) {
+            		channel.finishConnect();
 				}
-                continue;
+            	channel.configureBlocking(false);
+            	this.registerChannel(channel, SelectionKey.OP_READ, new DefaultChannelFuture() {
+	        			@Override
+	        			public void notifier() {}
+	        		}.setPipeline(pipeline).setFuture(null));
+            // a channel is ready for reading
+            } else if (key.isReadable()) {
+            	
+            	logger.info("worker process read!");
+	            // 读取数据
+	            int read = 0;
+	            int count = 0;
+	            boolean disconnect = true;
+	            ByteBuffer buffer = ByteBuffer.allocate(1024);
+	            try {
+	            	while ((read = pipeline.socketChannel().read(buffer)) > 0) {
+	            		count += read;
+	            		//写入输入缓存中
+	                    buffer.flip();
+	                    while (buffer.hasRemaining()) {
+	                    	pipeline.buffer().write(buffer.get());
+	                    }
+	                    buffer.clear();
+	            	}
+	            	disconnect = false;
+	            } catch (IOException ex) {
+	            	//ignore
+	            }
+	            
+	            //判断是否连接已断开
+	            if (count == 0 || disconnect) {
+	                try {
+	                	logger.info("channel is close, cancel key!");
+		                key.cancel();
+	                	logger.debug("fire channel inactive!");
+	                	//channel inactive
+						pipeline.fireChannelInactive();
+						//notify close future
+						pipeline.close();
+					} catch (Exception e) {
+						// ignore
+					}
+	                continue;
+	            }
+	            
+	            //执行输入handler
+	            try {
+	            	logger.info("worker fire channel read!");
+					pipeline.fireChannelRead(pipeline.buffer().toByteArray());
+				} catch (Exception e) {
+					logger.error("error on fireChannelRead!", e);
+					pipeline.fireExceptionCaught(e);
+				}
+            } else {
+            	logger.warn("upsupported event, key.interestOps={}", key.interestOps());
             }
-            
-            logger.debug("worker fire channel read!");
-            //执行输入handler
-            try {
-				pipeline.fireChannelRead(pipeline.getBuffer().toByteArray());
-			} catch (Exception e) {
-				logger.error("error on fireChannelRead!", e);
-				pipeline.fireExceptionCaught(e);
-			}
         }
     }
 
     @Override
     protected int select(Selector selector) throws IOException {
     	logger.debug("worker select()!");
-        return selector.select(1000);
+        return selector.select(5000);
     }
-
 
 	/* 
 	 * @Description: TODO
 	 * @param channel
-	 * @see com.asiainfo.mynetty.selector.Worker#registerChannel(java.nio.channels.SocketChannel)
+	 * @param op
+	 * @param future
+	 * @see com.asiainfo.mynetty.eventloop.Worker#registerChannel(java.nio.channels.SocketChannel, int, com.asiainfo.mynetty.future.ChannelFuture)
 	 */
 	@Override
-	public void registerChannel(final SocketChannel channel) {
+	public void registerChannel(final SocketChannel channel, final int op, final ChannelFuture future) {
 
 		logger.info("register Channel task!");
 		final Selector selector = this.selector;
@@ -119,26 +139,28 @@ public class WorkerEvenloop extends AbstractEventLoop implements Worker {
             @Override
             public void run() {
                 try {
-                	ChannelPipeline pipeline = buildChannelPipeline(channel);
-                    //将客户端注册到selector中
-                    channel.register(selector, SelectionKey.OP_READ, pipeline);
-                    //channel active
-                    pipeline.fireChannelActive();
+                	ChannelPipeline pipeline = (null == future || null == future.pipeline()) ? 
+            				ChannelPipeline.buildChannelPipeline(channel) : future.pipeline();
+                	//注册读事件
+                	if (SelectionKey.OP_READ == op) {
+                		//将客户端注册到selector中
+                        channel.register(selector, op, pipeline);
+                        //channel active
+                        pipeline.fireChannelActive();
+                	}
+                	//注册客户端连接事件
+                	else if (SelectionKey.OP_CONNECT == op) {
+                		//将客户端注册到selector中
+                        channel.register(selector, op, pipeline);
+                	}
                 } catch (Exception e) {
                     e.printStackTrace();
-                }
+                } finally {
+                	if (null != future) {
+                		future.notifier();
+                	}
+				}
             }
         });
-	}
-	
-	/*
-	 * 初始化pipelline和hanlder
-	 */
-	protected ChannelPipeline buildChannelPipeline(final SocketChannel channel) throws Exception {
-		
-		logger.info("build channel pipeline & init handler!");
-		ChannelPipeline pipeline = new ChannelPipeline(channel);
-		Context.getContext().getInitializer().initChannel(pipeline);
-		return pipeline;
 	}
 }
