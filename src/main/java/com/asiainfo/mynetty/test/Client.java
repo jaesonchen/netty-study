@@ -1,7 +1,6 @@
 package com.asiainfo.mynetty.test;
 
 import java.io.IOException;
-import java.util.concurrent.Executors;
 
 import com.asiainfo.mynetty.eventloop.Bootstrap;
 import com.asiainfo.mynetty.eventloop.EventLoopGroup;
@@ -9,6 +8,7 @@ import com.asiainfo.mynetty.future.ChannelFuture;
 import com.asiainfo.mynetty.future.FutureListener;
 import com.asiainfo.mynetty.pipeline.ChannelInitializer;
 import com.asiainfo.mynetty.pipeline.ChannelPipeline;
+import com.asiainfo.util.ThreadPoolUtils;
 
 /**
  * @Description: TODO
@@ -28,7 +28,7 @@ public class Client {
 	 */
 	public static void main(String[] args) throws Exception {
 
-		EventLoopGroup group = new EventLoopGroup(Executors.newCachedThreadPool(), 1);
+		EventLoopGroup group = new EventLoopGroup(ThreadPoolUtils.getInstance().cachedThreadPool(), 1);
 		Bootstrap b = new Bootstrap(group);
 		b.handler(new ChannelInitializer() {
 			@Override

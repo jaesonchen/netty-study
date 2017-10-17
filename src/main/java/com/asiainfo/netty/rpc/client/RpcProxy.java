@@ -11,7 +11,12 @@ import com.asiainfo.netty.rpc.model.RpcResponse;
 import com.asiainfo.netty.rpc.registry.ServiceDiscovery;
 
 /**
+ * 
  * RPC 代理（用于创建 RPC 服务代理）
+ * 
+ * @author       zq
+ * @date         2017年10月17日  下午1:04:39
+ * Copyright: 	  北京亚信智慧数据科技有限公司
  */
 public class RpcProxy {
 
@@ -32,6 +37,7 @@ public class RpcProxy {
     	
         return (T) Proxy.newProxyInstance(interfaceClass.getClassLoader(),
                 new Class<?>[]{interfaceClass}, new InvocationHandler() {
+                	@Override
                     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
                     	
                         //封装请求信息

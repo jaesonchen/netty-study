@@ -28,6 +28,7 @@ public class EchoClient {
 
             ChannelFuture f = b.connect("127.0.0.1", 5000).sync();
             f.addListener(new ChannelFutureListener() {
+            	@Override
                 public void operationComplete(ChannelFuture future) throws Exception {
                     if (future.isSuccess()) {
                         logger.info("client connected success");

@@ -7,7 +7,6 @@ import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Iterator;
-import java.util.Set;
 import java.util.concurrent.Executor;
 
 import org.slf4j.Logger;
@@ -35,10 +34,6 @@ public class BossEvenloop extends AbstractEventLoop implements Boss {
 	protected void process(Selector selector) throws Exception {
 		
 		logger.info("boss process selector!");
-		Set<SelectionKey> selectedKeys = selector.selectedKeys();
-        if (selectedKeys.isEmpty()) {
-            return;
-        }
         
         Iterator<SelectionKey> it = this.selector.selectedKeys().iterator();
         while (it.hasNext()) {

@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory;
  * @date         2017年10月3日  上午11:03:52
  * Copyright: 	  北京亚信智慧数据科技有限公司
  */
-public abstract class ChannelInboundHandlerAdapter implements ChannelInboundHandler {
+public class ChannelInboundHandlerAdapter implements ChannelInboundHandler {
 
 	final Logger logger = LoggerFactory.getLogger(getClass());
 	

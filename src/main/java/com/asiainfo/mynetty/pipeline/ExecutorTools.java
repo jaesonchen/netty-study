@@ -1,7 +1,8 @@
 package com.asiainfo.mynetty.pipeline;
 
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+
+import com.asiainfo.util.ThreadPoolUtils;
 
 /**
  * @Description: TODO
@@ -12,7 +13,7 @@ import java.util.concurrent.Executors;
  */
 public class ExecutorTools {
 
-	private final ExecutorService service = Executors.newCachedThreadPool();
+	private final ExecutorService service = ThreadPoolUtils.getInstance().cachedThreadPool();
 	
 	private ExecutorTools() {}
 	

@@ -24,12 +24,16 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 
 /**
+ * 
  * 框架的RPC 服务器（用于将用户系统的业务类发布为 RPC 服务）
  * 使用时可由用户通过spring-bean的方式注入到用户的业务系统中
  * 由于本类实现了ApplicationContextAware InitializingBean
  * spring构造本对象时会调用setApplicationContext()方法，从而可以在方法中通过自定义注解获得用户的业务接口和实现
  * 还会调用afterPropertiesSet()方法，在方法中启动netty服务器
- *
+ * 
+ * @author       zq
+ * @date         2017年10月17日  下午1:03:17
+ * Copyright: 	  北京亚信智慧数据科技有限公司
  */
 public class RpcServer implements ApplicationContextAware, InitializingBean {
 
@@ -54,6 +58,7 @@ public class RpcServer implements ApplicationContextAware, InitializingBean {
 	/**
 	 * 通过注解，获取标注了RpcService注解的业务类的----接口及impl对象，将它放到handlerMap中
 	 */
+	@Override
 	public void setApplicationContext(ApplicationContext ctx) throws BeansException {
 		
 		Map<String, Object> serviceBeanMap = ctx.getBeansWithAnnotation(RpcService.class);
@@ -75,6 +80,7 @@ public class RpcServer implements ApplicationContextAware, InitializingBean {
 	 * 3、将业务调用结果封装到response并序列化后发往客户端
 	 *
 	 */
+	@Override
 	public void afterPropertiesSet() throws Exception {
 		
 		EventLoopGroup bossGroup = new NioEventLoopGroup();

@@ -11,8 +11,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ * 
  * 服务注册 ，ZK 在该架构中扮演了“服务注册表”的角色，用于注册所有服务器的地址与端口，并对客户端提供服务发现的功能
  * 
+ * @author       zq
+ * @date         2017年10月17日  下午1:03:48
+ * Copyright: 	  北京亚信智慧数据科技有限公司
  */
 public class ServiceRegistry {
 
@@ -55,6 +59,7 @@ public class ServiceRegistry {
 		try {
 			zk = new ZooKeeper(registryAddress, Constant.ZK_SESSION_TIMEOUT,
 					new Watcher() {
+						@Override
 						public void process(WatchedEvent event) {
 							if (event.getState() == Event.KeeperState.SyncConnected) {
 								latch.countDown();

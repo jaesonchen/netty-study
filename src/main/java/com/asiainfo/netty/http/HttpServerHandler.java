@@ -33,7 +33,7 @@ public class HttpServerHandler extends ChannelInboundHandlerAdapter {
             String url = request.uri();
             logger.info("request url:{}", url);
 
-            if (url.equals("/favicon.ico")) {
+            if ("/favicon.ico".equals(url)) {
                 return;
             }
 

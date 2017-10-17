@@ -17,6 +17,14 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 
+/**
+ * 
+ * @Description: TODO
+ * 
+ * @author       zq
+ * @date         2017年10月17日  上午11:40:15
+ * Copyright: 	  北京亚信智慧数据科技有限公司
+ */
 public class ReconnectClient {
 
     final Logger logger = LoggerFactory.getLogger(getClass());
@@ -55,6 +63,7 @@ public class ReconnectClient {
     	
         ChannelFuture future = bootstrap.connect(host, port);
         future.addListener(new ChannelFutureListener() {
+        	@Override
             public void operationComplete(ChannelFuture f) throws Exception {
                 if (f.isSuccess()) {
                     logger.info("client connected success");

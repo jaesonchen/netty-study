@@ -14,8 +14,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ * 
  * 本类用于client发现server节点的变化 ，实现负载均衡
- *
+ * 
+ * @author       zq
+ * @date         2017年10月17日  下午1:04:29
+ * Copyright: 	  北京亚信智慧数据科技有限公司
  */
 public class ServiceDiscovery {
 
@@ -88,6 +92,7 @@ public class ServiceDiscovery {
 		try {
 			zk = new ZooKeeper(registryAddress, Constant.ZK_SESSION_TIMEOUT,
 					new Watcher() {
+						@Override
 						public void process(WatchedEvent event) {
 							if (event.getState() == Event.KeeperState.SyncConnected) {
 								latch.countDown();
@@ -112,6 +117,7 @@ public class ServiceDiscovery {
 			// 获取所有子节点
 			List<String> nodeList = zk.getChildren(Constant.ZK_REGISTRY_PATH,
 					new Watcher() {
+						@Override
 						public void process(WatchedEvent event) {
 							// 节点改变
 							if (event.getType() == Event.EventType.NodeChildrenChanged) {
