@@ -1,6 +1,6 @@
 package com.asiainfo.mynetty.test;
 
-import com.asiainfo.mynetty.future.FutureListener;
+import com.asiainfo.mynetty.future.ChannelFutureListener;
 import com.asiainfo.mynetty.handler.ChannelHandlerContext;
 import com.asiainfo.mynetty.handler.ChannelInboundHandlerAdapter;
 import com.asiainfo.mynetty.pipeline.ReleaseUtil;
@@ -31,10 +31,12 @@ public class ClientInboundHandler extends ChannelInboundHandlerAdapter {
 
 	@Override
 	public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-		
-		byte[] bt = (byte[]) msg;
-		System.out.println(new String(bt));
-		ReleaseUtil.release(ctx);
-		ctx.pipeline().writeAndFlush("bye".getBytes()).addListener(FutureListener.CLOSE);
+		try {
+    		byte[] bt = (byte[]) msg;
+    		System.out.println(new String(bt));
+    		ctx.pipeline().writeAndFlush("bye".getBytes()).addListener(ChannelFutureListener.CLOSE);
+		} finally {
+		    ReleaseUtil.release(ctx);
+		}
 	}
 }

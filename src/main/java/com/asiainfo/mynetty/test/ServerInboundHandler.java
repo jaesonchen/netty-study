@@ -3,7 +3,7 @@ package com.asiainfo.mynetty.test;
 import java.io.IOException;
 
 import com.asiainfo.mynetty.future.ChannelFuture;
-import com.asiainfo.mynetty.future.FutureListener;
+import com.asiainfo.mynetty.future.ChannelFutureListener;
 import com.asiainfo.mynetty.handler.ChannelHandlerContext;
 import com.asiainfo.mynetty.handler.ChannelInboundHandlerAdapter;
 import com.asiainfo.mynetty.pipeline.ReleaseUtil;
@@ -34,16 +34,19 @@ public class ServerInboundHandler extends ChannelInboundHandlerAdapter {
 	@Override
 	public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
 		
-		byte[] bt = (byte[]) msg;
-		System.out.println(new String(bt));
-		ReleaseUtil.release(ctx);
-		if (!"bye".equals(new String(bt))) {
-			ctx.pipeline().writeAndFlush(("hello " + new String(bt)).getBytes()).addListener(new FutureListener() {
-				@Override
-				public void operationComplete(ChannelFuture future) throws IOException {
-					System.out.println("Server futureListener after writeAndFlush!");
-				}
-			});
-		}
+	    try {
+    		byte[] bt = (byte[]) msg;
+    		System.out.println(new String(bt));
+    		if (!"bye".equals(new String(bt))) {
+    			ctx.pipeline().writeAndFlush(("hello " + new String(bt)).getBytes()).addListener(new ChannelFutureListener() {
+    				@Override
+    				public void operationComplete(ChannelFuture future) throws IOException {
+    					System.out.println("Server futureListener after writeAndFlush!");
+    				}
+    			});
+    		}
+	    } finally {
+            ReleaseUtil.release(ctx);
+        }
 	}
 }

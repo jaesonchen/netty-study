@@ -1,4 +1,4 @@
-package com.asiainfo.mynetty.eventloop;
+package com.asiainfo.mynetty.boot;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -8,16 +8,18 @@ import java.util.concurrent.Callable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.asiainfo.mynetty.eventloop.Boss;
+import com.asiainfo.mynetty.eventloop.EventLoopGroup;
 import com.asiainfo.mynetty.future.ChannelFuture;
 import com.asiainfo.mynetty.future.DefaultChannelFuture;
-import com.asiainfo.mynetty.handler.Context;
+import com.asiainfo.mynetty.handler.HandlerInitializerContext;
 import com.asiainfo.mynetty.pipeline.ChannelInitializer;
 import com.asiainfo.mynetty.pipeline.ChannelPipeline;
 import com.asiainfo.mynetty.pipeline.ExecutorTools;
 
 /**
  * 
- * @Description: 启动类
+ * @Description: 服务器启动类
  * 
  * @author       zq
  * @date         2017年10月5日  上午10:11:28
@@ -46,7 +48,6 @@ public class ServerBootstrap {
     	ServerSocketChannel ssChannel = ServerSocketChannel.open();
     	// 设置通道为非阻塞
     	ssChannel.configureBlocking(false);
-    	
         return executeServerChannel(ssChannel, localAddress);
     }
     
@@ -58,14 +59,15 @@ public class ServerBootstrap {
      */
     public ServerBootstrap handler(ChannelInitializer initializer) {
     	
-    	logger.info("register channel handler initializer!");
-    	Context.getContext().setInitializer(initializer);
+    	logger.info("set ChannelInitializer!");
+    	HandlerInitializerContext.getContext().setInitializer(this.group, initializer);
     	return this;
     }
     
-    protected ChannelFuture executeServerChannel(final ServerSocketChannel ssChannel, final InetSocketAddress localAddress) {
+    // 启动服务器
+    private ChannelFuture executeServerChannel(final ServerSocketChannel ssChannel, final InetSocketAddress localAddress) {
     	
-    	final DefaultChannelFuture future = new DefaultChannelFuture();
+    	final DefaultChannelFuture future = new DefaultChannelFuture(new ChannelPipeline(ssChannel));
     	Callable<Void> callable = new Callable<Void>() {
 			@Override
 			public Void call() throws Exception {
@@ -76,12 +78,16 @@ public class ServerBootstrap {
 		    	//向boss注册一个ServerSocket通道
 		    	nextBoss.registerAcceptChannel(ssChannel, future);
 		    	//等待执行完成
-		    	future.await();
+		    	// registerAcceptChannel在wakeup selector时，会立即执行select() block的线程，导致后续的notifier先于wait
+		    	synchronized(future.getLock()) {
+		    	    if (!future.isFinish()) {
+		    	        future.await();
+		    	    }
+		    	}
+		    	future.done();
 				return null;
 			}
     	};
-    	
-    	return future.setPipeline(new ChannelPipeline(null))
-    			.setFuture(ExecutorTools.getInstance().getExecutor().submit(callable));
+    	return future.setFuture(ExecutorTools.getInstance().getExecutor().submit(callable));
     }
 }

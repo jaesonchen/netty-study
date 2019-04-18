@@ -19,7 +19,7 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 
 /**
  * 
- * @Description: TODO
+ * @Description: 断线重连
  * 
  * @author       zq
  * @date         2017年10月17日  上午11:40:15

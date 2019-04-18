@@ -4,7 +4,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * @Description: TODO
+ * @Description: InboundHandler Adapter，缺省实现，客户端编写Handler时可继承该类，只重写需要的方法。
+ *               ChannelInboundHandlerAdapter默认作为channelpipeline的handler队列第一个处理器。
  * 
  * @author       zq
  * @date         2017年10月3日  上午11:03:52

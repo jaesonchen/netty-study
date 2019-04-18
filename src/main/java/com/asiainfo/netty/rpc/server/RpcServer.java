@@ -76,7 +76,7 @@ public class RpcServer implements ApplicationContextAware, InitializingBean {
 	/**
 	 * 在此启动netty服务，绑定handler流水线：
 	 * 1、接收请求数据进行反序列化得到request对象
-	 * 2、根据request中的参数，让RpcHandler从handlerMap中找到对应的业务imple，调用指定方法，获取返回结果
+	 * 2、根据request中的参数，让RpcHandler从handlerMap中找到对应的业务implement，调用指定方法，获取返回结果
 	 * 3、将业务调用结果封装到response并序列化后发往客户端
 	 *
 	 */

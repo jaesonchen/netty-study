@@ -69,10 +69,10 @@ public class RpcHandler extends SimpleChannelInboundHandler<RpcRequest> {
 		Object[] parameters = request.getParameters();
 		
 		//拿到业务类的class文件对象
-		Class<?> forName = Class.forName(clazzName);
+		Class<?> clazz = Class.forName(clazzName);
 		
 		//调用实现类对象的指定方法并返回结果
-		Method method = forName.getMethod(methodName, parameterTypes);
+		Method method = clazz.getMethod(methodName, parameterTypes);
 		return method.invoke(service, parameters);
 	}
 

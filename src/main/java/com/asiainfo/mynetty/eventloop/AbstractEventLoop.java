@@ -10,7 +10,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
 /**
  * 
  * @Description: 抽象selector线程类
@@ -74,8 +73,8 @@ public abstract class AbstractEventLoop implements Runnable {
 	@Override
 	public void run() {
 		
+	    Thread.currentThread().setName(this.threadName);
 		logger.info("EventLoop runing, threadName={}!", this.threadName);
-		Thread.currentThread().setName(this.threadName);
 		while (true) {
 			try {
 				logger.debug("set wakenUp=false!");
@@ -83,13 +82,13 @@ public abstract class AbstractEventLoop implements Runnable {
 				wakenUp.set(false);
 				logger.debug("block on select()!");
 				//select
-				select(selector);
+				select(this.selector);
 				logger.debug("selector wakeup!");
 				//运行任务队列中新加入的任务
 				processTaskQueue();
 				logger.debug("process selector event!");
 				//处理select事件
-				process(selector);
+				process(this.selector);
 			} catch (Exception e) {
 				// ignore
 			}

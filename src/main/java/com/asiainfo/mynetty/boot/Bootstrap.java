@@ -1,4 +1,4 @@
-package com.asiainfo.mynetty.eventloop;
+package com.asiainfo.mynetty.boot;
 
 import java.net.InetSocketAddress;
 import java.nio.channels.SelectionKey;
@@ -8,15 +8,17 @@ import java.util.concurrent.Callable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.asiainfo.mynetty.eventloop.EventLoopGroup;
+import com.asiainfo.mynetty.eventloop.Worker;
 import com.asiainfo.mynetty.future.ChannelFuture;
 import com.asiainfo.mynetty.future.DefaultChannelFuture;
-import com.asiainfo.mynetty.handler.Context;
+import com.asiainfo.mynetty.handler.HandlerInitializerContext;
 import com.asiainfo.mynetty.pipeline.ChannelInitializer;
 import com.asiainfo.mynetty.pipeline.ChannelPipeline;
 import com.asiainfo.mynetty.pipeline.ExecutorTools;
 
 /**
- * @Description: TODO
+ * @Description: 客户端启动程序
  * 
  * @author       zq
  * @date         2017年10月10日  下午5:34:39
@@ -55,16 +57,15 @@ public class Bootstrap {
      */
     public Bootstrap handler(ChannelInitializer initializer) {
     	
-    	logger.info("register channel handler initializer!");
-    	Context.getContext().setInitializer(initializer);
+    	logger.info("set ChannelInitializer!");
+    	HandlerInitializerContext.getContext().setInitializer(this.group, initializer);
     	return this;
     }
     
-    protected ChannelFuture executeChannel(final SocketChannel channel, final InetSocketAddress localAddress) throws Exception {
+    // 连接服务器，返回ChannelFuture
+    private ChannelFuture executeChannel(final SocketChannel channel, final InetSocketAddress localAddress) throws Exception {
     	
-    	final DefaultChannelFuture future = new DefaultChannelFuture();
-    	future.setPipeline(ChannelPipeline.buildChannelPipeline(channel));
-    	
+    	final DefaultChannelFuture future = new DefaultChannelFuture(ChannelPipeline.buildChannelPipeline(this.group, channel));
     	Callable<Void> callable = new Callable<Void>() {
 			@Override
 			public Void call() throws Exception {
@@ -74,11 +75,16 @@ public class Bootstrap {
 		    	Worker nextworker = Bootstrap.this.group.nextWorker();
 		    	// 注册新客户端接入任务
 	    		nextworker.registerChannel(channel, SelectionKey.OP_CONNECT, future);
-	    		future.await();
+	    		// registerChannel在wakeup selector时，会立即执行select() block的线程，导致后续的notifier先于wait
+	    		synchronized(future.getLock()) {
+                    if (!future.isFinish()) {
+                        future.await();
+                    }
+                }
+	    		future.done();
 				return null;
 			}
     	};
-
     	return future.setFuture(ExecutorTools.getInstance().getExecutor().submit(callable));
     }
 }

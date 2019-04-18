@@ -47,20 +47,15 @@ public class WorkerEvenloop extends AbstractEventLoop implements Worker {
             final ChannelPipeline pipeline = (ChannelPipeline) key.attachment();
             // a connection was established with a remote server.
             if (key.isConnectable()) {
-            	
             	logger.info("worker process connect!");
             	SocketChannel channel = (SocketChannel) key.channel();
             	if(channel.isConnectionPending()) {
             		channel.finishConnect();
 				}
             	channel.configureBlocking(false);
-            	this.registerChannel(channel, SelectionKey.OP_READ, new DefaultChannelFuture() {
-	        			@Override
-	        			public void notifier() {}
-	        		}.setPipeline(pipeline).setFuture(null));
+            	this.registerChannel(channel, SelectionKey.OP_READ, new DefaultChannelFuture(pipeline));
             // a channel is ready for reading
             } else if (key.isReadable()) {
-            	
             	logger.info("worker process read!");
 	            // 读取数据
 	            int read = 0;
@@ -126,35 +121,37 @@ public class WorkerEvenloop extends AbstractEventLoop implements Worker {
 	 * @see com.asiainfo.mynetty.eventloop.Worker#registerChannel(java.nio.channels.SocketChannel, int, com.asiainfo.mynetty.future.ChannelFuture)
 	 */
 	@Override
-	public void registerChannel(final SocketChannel channel, final int op, final ChannelFuture future) {
+	public void registerChannel(final SocketChannel channel, final int op, final ChannelFuture future) throws Exception {
 
 		logger.info("register Channel task!");
-		final Selector selector = this.selector;
         registerTask(new Runnable() {
             @Override
             public void run() {
                 try {
                 	ChannelPipeline pipeline = (null == future || null == future.pipeline()) ? 
-            				ChannelPipeline.buildChannelPipeline(channel) : future.pipeline();
+            				ChannelPipeline.buildChannelPipeline(WorkerEvenloop.super.group, channel) : future.pipeline();
                 	//注册读事件
                 	if (SelectionKey.OP_READ == op) {
                 		//将客户端注册到selector中
-                        channel.register(selector, op, pipeline);
+                        channel.register(WorkerEvenloop.super.selector, op, pipeline);
                         //channel active
                         pipeline.fireChannelActive();
                 	}
                 	//注册客户端连接事件
                 	else if (SelectionKey.OP_CONNECT == op) {
                 		//将客户端注册到selector中
-                        channel.register(selector, op, pipeline);
+                        channel.register(WorkerEvenloop.super.selector, op, pipeline);
                 	}
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    logger.error("error on register SocketChannel!", e);
                 } finally {
-                	if (null != future) {
-                		future.notifier();
-                	}
-				}
+                    if (future != null) {
+                        synchronized(future.getLock()) {
+                            future.setFinish(true);
+                            future.notifier();
+                        }
+                    }
+                }
             }
         });
 	}

@@ -15,7 +15,7 @@ import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.CharsetUtil;
 
 /**
- * @Description: TODO
+ * @Description: 心跳客户端handler
  * 
  * @author       zq
  * @date         2017年10月11日  下午4:52:01

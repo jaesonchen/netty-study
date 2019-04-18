@@ -34,13 +34,11 @@ public class BossEvenloop extends AbstractEventLoop implements Boss {
 	protected void process(Selector selector) throws Exception {
 		
 		logger.info("boss process selector!");
-        
         Iterator<SelectionKey> it = this.selector.selectedKeys().iterator();
         while (it.hasNext()) {
         	SelectionKey key = it.next();
             // 移除，防止重复处理
             it.remove();
-            
             ServerSocketChannel ssChannel = (ServerSocketChannel) key.channel();
             logger.debug("boss accept new connection!");
     		// 新客户端
@@ -67,22 +65,24 @@ public class BossEvenloop extends AbstractEventLoop implements Boss {
 	 * @see com.asiainfo.mynetty.eventloop.Boss#registerAcceptChannel(java.nio.channels.ServerSocketChannel, com.asiainfo.mynetty.future.ChannelFuture)
 	 */
 	@Override
-	public void registerAcceptChannel(ServerSocketChannel ssChannel, ChannelFuture future) {
+	public void registerAcceptChannel(ServerSocketChannel ssChannel, ChannelFuture future) throws Exception {
 
 		logger.info("register Accept Channel task!");
-		final Selector selector = this.selector;
 		registerTask(new Runnable() {
 			@Override
 			public void run() {
 				try {
 					//注册serverChannel到selector
-					ssChannel.register(selector, SelectionKey.OP_ACCEPT);
+					ssChannel.register(BossEvenloop.super.selector, SelectionKey.OP_ACCEPT);
 				} catch (ClosedChannelException e) {
-					e.printStackTrace();
+					logger.error("error on register ServerSocketChannel!", e);
 				} finally {
-					if (null != future) {
-						future.notifier();
-					}
+				    if (future != null) {
+    				    synchronized(future.getLock()) {
+    				        future.setFinish(true);
+    				        future.notifier();
+    				    }
+				    }
 				}
 			}
 		});

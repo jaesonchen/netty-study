@@ -85,7 +85,13 @@ public class EventLoopGroup {
 		 return bosses[Math.abs(bossIndex.getAndIncrement() % bosses.length)];
 	}
 	
-	protected void shutdownAndAwaitTermination(ExecutorService pool) {
+	/**
+	 * 关闭线程池
+	 * @author chenzq
+	 * @date 2019年3月18日 上午10:24:47
+	 * @param pool
+	 */
+	public void shutdownAndAwaitTermination(ExecutorService pool) {
 		
 		pool.shutdown(); // Disable new tasks from being submitted  
 		try {

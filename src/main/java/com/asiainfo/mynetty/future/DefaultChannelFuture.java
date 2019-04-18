@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
 import com.asiainfo.mynetty.pipeline.ChannelPipeline;
 
 /**
- * @Description: TODO
+ * @Description: ChannelFuture缺省实现
  * 
  * @author       zq
  * @date         2017年10月7日  下午9:59:28
@@ -23,8 +23,14 @@ public class DefaultChannelFuture implements ChannelFuture {
 
 	protected ChannelPipeline pipeline;
 	protected Future<Void> future;
-	protected List<FutureListener> listeners = new ArrayList<>();
+	protected List<ChannelFutureListener> listeners = new ArrayList<>();
 	protected final Object obj = new Object();
+	protected boolean finish;
+	
+	public DefaultChannelFuture() {}
+	public DefaultChannelFuture(ChannelPipeline pipeline) {
+	    this.pipeline = pipeline;
+	}
 	
 	public DefaultChannelFuture setPipeline(ChannelPipeline pipeline) {
 		this.pipeline = pipeline;
@@ -54,6 +60,16 @@ public class DefaultChannelFuture implements ChannelFuture {
 	public ChannelPipeline pipeline() {
 		return this.pipeline;
 	}
+	  
+    /* 
+     * @Description: TODO
+     * @return
+     * @see com.asiainfo.mynetty.future.ChannelFuture#closeFuture()
+     */
+    @Override
+    public ChannelFuture closeFuture() {
+        return this.pipeline.closeFuture();
+    }
 	
 	/* 
 	 * @Description: TODO
@@ -62,7 +78,7 @@ public class DefaultChannelFuture implements ChannelFuture {
 	 * @see com.asiainfo.mynetty.future.ChannelFuture#addListener(com.asiainfo.mynetty.future.FutureListener)
 	 */
 	@Override
-	public ChannelFuture addListener(FutureListener listener) {
+	public ChannelFuture addListener(ChannelFutureListener listener) {
 		
 		logger.debug("addListener()...");
 		this.listeners.add(listener);
@@ -82,6 +98,23 @@ public class DefaultChannelFuture implements ChannelFuture {
 		future.get();
 	}
 
+    /* 
+     * @Description: TODO
+     * @see com.asiainfo.mynetty.future.ChannelFuture#done()
+     */
+    @Override
+    public void done() {
+        
+        logger.debug("done()...");
+        try {
+            for (ChannelFutureListener listener : listeners) {
+                listener.operationComplete(this);
+            }
+        } catch (Exception ex) {
+            //ignore
+        }
+    }
+    
 	/* 
 	 * @Description: TODO
 	 * @throws Exception
@@ -107,33 +140,20 @@ public class DefaultChannelFuture implements ChannelFuture {
 		synchronized(this.obj) {
 			this.obj.notify();
 		}
-		this.done();
-	}
-
-	/* 
-	 * @Description: TODO
-	 * @see com.asiainfo.mynetty.future.ChannelFuture#done()
-	 */
-	@Override
-	public void done() {
-		
-		logger.debug("done()...");
-		try {
-			for (FutureListener listener : listeners) {
-				listener.operationComplete(this);
-			}
-		} catch (Exception ex) {
-			//ignore
-		}
 	}
 	
-	/* 
-	 * @Description: TODO
-	 * @return
-	 * @see com.asiainfo.mynetty.future.ChannelFuture#closeFuture()
-	 */
-	@Override
-	public ChannelFuture closeFuture() {
-		return this.pipeline.closeFuture();
-	}
+    @Override
+    public Object getLock() {
+        return this.obj;
+    }
+    
+    @Override
+    public boolean isFinish() {
+        return this.finish;
+    }
+    
+    @Override
+    public void setFinish(boolean finish) {
+        this.finish = finish;
+    }
 }

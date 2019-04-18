@@ -1,6 +1,7 @@
 package com.asiainfo.mynetty.pipeline;
 
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ScheduledExecutorService;
 
 import com.asiainfo.util.ThreadPoolUtils;
 
@@ -14,6 +15,7 @@ import com.asiainfo.util.ThreadPoolUtils;
 public class ExecutorTools {
 
 	private final ExecutorService service = ThreadPoolUtils.getInstance().cachedThreadPool();
+	private final ScheduledExecutorService schedule = ThreadPoolUtils.getInstance().scheduledThreadPool(10);
 	
 	private ExecutorTools() {}
 	
@@ -27,5 +29,9 @@ public class ExecutorTools {
 	
 	public ExecutorService getExecutor() {
 		return service;
+	}
+	
+	public ScheduledExecutorService getSchedule() {
+	    return schedule;
 	}
 }

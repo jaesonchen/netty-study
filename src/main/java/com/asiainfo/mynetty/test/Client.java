@@ -2,10 +2,10 @@ package com.asiainfo.mynetty.test;
 
 import java.io.IOException;
 
-import com.asiainfo.mynetty.eventloop.Bootstrap;
+import com.asiainfo.mynetty.boot.Bootstrap;
 import com.asiainfo.mynetty.eventloop.EventLoopGroup;
 import com.asiainfo.mynetty.future.ChannelFuture;
-import com.asiainfo.mynetty.future.FutureListener;
+import com.asiainfo.mynetty.future.ChannelFutureListener;
 import com.asiainfo.mynetty.pipeline.ChannelInitializer;
 import com.asiainfo.mynetty.pipeline.ChannelPipeline;
 import com.asiainfo.util.ThreadPoolUtils;
@@ -36,7 +36,7 @@ public class Client {
 				ch.addHandler(new ClientInboundHandler());
 			}});
 		ChannelFuture f = b.connect("localhost", 8080);
-		f.addListener(new FutureListener() {
+		f.addListener(new ChannelFutureListener() {
 			@Override
 			public void operationComplete(ChannelFuture future) throws IOException {
 				System.out.println("client connect finish!");

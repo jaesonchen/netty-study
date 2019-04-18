@@ -3,10 +3,10 @@ package com.asiainfo.mynetty.test;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 
+import com.asiainfo.mynetty.boot.ServerBootstrap;
 import com.asiainfo.mynetty.eventloop.EventLoopGroup;
-import com.asiainfo.mynetty.eventloop.ServerBootstrap;
 import com.asiainfo.mynetty.future.ChannelFuture;
-import com.asiainfo.mynetty.future.FutureListener;
+import com.asiainfo.mynetty.future.ChannelFutureListener;
 import com.asiainfo.mynetty.pipeline.ChannelInitializer;
 import com.asiainfo.mynetty.pipeline.ChannelPipeline;
 import com.asiainfo.util.ThreadPoolUtils;
@@ -37,10 +37,11 @@ public class Server {
 		b.handler(new ChannelInitializer() {
 			@Override
 			public void initChannel(ChannelPipeline ch) throws Exception {
+			    ch.addHandler(new SecondServerInboundHandler());
 				ch.addHandler(new ServerInboundHandler());
 			}});
 		ChannelFuture f = b.bind(new InetSocketAddress(8080));
-		f.addListener(new FutureListener() {
+		f.addListener(new ChannelFutureListener() {
 			@Override
 			public void operationComplete(ChannelFuture future) throws IOException {
 				System.out.println("server bind address finish!");

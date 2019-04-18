@@ -4,7 +4,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * @Description: TODO
+ * @Description: OutboundHandler Adapter，缺省实现，客户端编写Handler时可继承该类，只重写需要的方法。
+ *               ChannelOutboundHandlerAdapter默认作为channelpipeline的handler队列最后一个处理器。
  * 
  * @author       zq
  * @date         2017年10月3日  上午11:04:35
@@ -37,18 +38,5 @@ public class ChannelOutboundHandlerAdapter implements ChannelOutboundHandler {
 	public void flush(ChannelHandlerContext ctx) throws Exception {
 		logger.debug("ChannelOutboundHandlerAdapter flush!");
 		ctx.flush();
-	}
-	
-	/* 
-	 * @Description: TODO
-	 * @param ctx
-	 * @param cause
-	 * @throws Exception
-	 * @see com.asiainfo.mynetty.handler.ChannelHandler#exceptionCaught(com.asiainfo.mynetty.handler.ChannelHandlerContext, java.lang.Throwable)
-	 */
-	@Override
-	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-		logger.debug("ChannelOutboundHandlerAdapter exceptionCaught!");
-		ctx.fireExceptionCaught(cause);
 	}
 }

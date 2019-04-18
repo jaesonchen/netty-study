@@ -18,5 +18,5 @@ public interface Boss {
 	 * 加入一个新的ServerSocket
 	 * @param serverChannel
 	 */
-	public void registerAcceptChannel(ServerSocketChannel ssChannel, ChannelFuture future);
+	public void registerAcceptChannel(ServerSocketChannel ssChannel, ChannelFuture future) throws Exception ;
 }

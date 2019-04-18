@@ -1,7 +1,7 @@
 package com.asiainfo.mynetty.pipeline;
 
 /**
- * @Description: TODO
+ * @Description: ChannelPipeline的Handler链初始化接口
  * 
  * @author       zq
  * @date         2017年10月6日  下午4:15:32
@@ -9,5 +9,12 @@ package com.asiainfo.mynetty.pipeline;
  */
 public interface ChannelInitializer {
 
+    /**
+     * @Description: 初始化ChannelPipeline的Handler链
+     * @author chenzq
+     * @date 2019年3月18日 上午10:12:21
+     * @param ch
+     * @throws Exception
+     */
 	void initChannel(ChannelPipeline ch) throws Exception;
 }
