@@ -133,11 +133,19 @@ public abstract class AbstractEventLoop implements Runnable {
 	}
 	
 	/**
-	 * 获取线程管理对象
+	 * 获取EventLoopGroup对象
 	 * @return
 	 */
 	public EventLoopGroup getEventLoopGroup() {
 		return this.group;
+	}
+	
+	/**
+	 * 获取Selector对象
+	 * @return
+	 */
+	public Selector getSelector() {
+	    return this.selector;
 	}
 
 	/**

@@ -45,7 +45,7 @@ public class ChannelHandlerContext {
 	/**
 	 * 上次读的时间
 	 */
-	private long lastRead = System.currentTimeMillis();
+	private volatile long lastRead = System.currentTimeMillis();
 	
 	public ChannelHandlerContext() {}
 	public ChannelHandlerContext(ChannelPipeline pipeline, ChannelHandler handler) {

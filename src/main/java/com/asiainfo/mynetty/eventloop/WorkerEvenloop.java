@@ -35,8 +35,7 @@ public class WorkerEvenloop extends AbstractEventLoop implements Worker {
     protected void process(Selector selector) throws Exception {
     	
     	logger.info("worker process selector!");
-        
-        Iterator<SelectionKey> it = this.selector.selectedKeys().iterator();
+        Iterator<SelectionKey> it = getSelector().selectedKeys().iterator();
         while (it.hasNext()) {
             SelectionKey key = it.next();
             // 移除，防止重复处理
@@ -64,7 +63,7 @@ public class WorkerEvenloop extends AbstractEventLoop implements Worker {
 	            ByteBuffer buffer = ByteBuffer.allocate(1024);
 	            try {
 	            	while ((read = pipeline.socketChannel().read(buffer)) > 0) {
-	            		count += read;
+	            	    count += read;
 	            		//写入输入缓存中
 	                    buffer.flip();
 	                    while (buffer.hasRemaining()) {
@@ -78,14 +77,14 @@ public class WorkerEvenloop extends AbstractEventLoop implements Worker {
 	            }
 	            
 	            //判断是否连接已断开
-	            if (count == 0 || disconnect) {
+	            if (read == -1 || disconnect) {
 	                try {
-	                	logger.info("channel is close, cancel key!");
-		                key.cancel();
+	                	logger.info("read={}, channel is close, cancel key!", read);
+	                	key.cancel();
 	                	logger.debug("fire channel inactive!");
 	                	//channel inactive
 						pipeline.fireChannelInactive();
-						//notify close future
+						//close pipeline and notify close future
 						pipeline.close();
 					} catch (Exception e) {
 						// ignore
@@ -95,7 +94,7 @@ public class WorkerEvenloop extends AbstractEventLoop implements Worker {
 	            
 	            //执行输入handler
 	            try {
-	            	logger.info("worker fire channel read!");
+	            	logger.info("read={}, fire channel read!", count);
 					pipeline.fireChannelRead(pipeline.buffer().toByteArray());
 				} catch (Exception e) {
 					logger.error("error on fireChannelRead!", e);
@@ -113,13 +112,6 @@ public class WorkerEvenloop extends AbstractEventLoop implements Worker {
         return selector.select(5000);
     }
 
-	/* 
-	 * @Description: TODO
-	 * @param channel
-	 * @param op
-	 * @param future
-	 * @see com.asiainfo.mynetty.eventloop.Worker#registerChannel(java.nio.channels.SocketChannel, int, com.asiainfo.mynetty.future.ChannelFuture)
-	 */
 	@Override
 	public void registerChannel(final SocketChannel channel, final int op, final ChannelFuture future) throws Exception {
 
@@ -129,18 +121,14 @@ public class WorkerEvenloop extends AbstractEventLoop implements Worker {
             public void run() {
                 try {
                 	ChannelPipeline pipeline = (null == future || null == future.pipeline()) ? 
-            				ChannelPipeline.buildChannelPipeline(WorkerEvenloop.super.group, channel) : future.pipeline();
-                	//注册读事件
+            				ChannelPipeline.buildChannelPipeline(getEventLoopGroup(), channel) : future.pipeline();
+            				
+            		//将客户端感兴趣的事件注册到selector中
+            		channel.register(getSelector(), op, pipeline);
+                	//注册读事件激活channelActive
                 	if (SelectionKey.OP_READ == op) {
-                		//将客户端注册到selector中
-                        channel.register(WorkerEvenloop.super.selector, op, pipeline);
                         //channel active
                         pipeline.fireChannelActive();
-                	}
-                	//注册客户端连接事件
-                	else if (SelectionKey.OP_CONNECT == op) {
-                		//将客户端注册到selector中
-                        channel.register(WorkerEvenloop.super.selector, op, pipeline);
                 	}
                 } catch (Exception e) {
                     logger.error("error on register SocketChannel!", e);

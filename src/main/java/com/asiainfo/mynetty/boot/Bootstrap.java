@@ -1,8 +1,12 @@
 package com.asiainfo.mynetty.boot;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.SocketOption;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.Callable;
 
 import org.slf4j.Logger;
@@ -28,14 +32,25 @@ public class Bootstrap {
 
 	final Logger logger = LoggerFactory.getLogger(getClass());
 	
+    private static Set<SocketOption<?>> options = new HashSet<>(8);
+    static {
+        //options.add(ChannelOption.SO_TIMEOUT);
+        options.add(ChannelOption.SO_KEEPALIVE);
+        options.add(ChannelOption.TCP_NODELAY);
+    }
+    
 	private EventLoopGroup group;
-    public Bootstrap(EventLoopGroup group) {
+	private SocketChannel channel;
+    public Bootstrap(EventLoopGroup group) throws IOException {
         this.group = group;
+        // 打开一个socket通道
+        this.channel = SocketChannel.open();
     }
 
     /**
-     * 连接服务器
-     * 
+     * @Description: 连接服务器
+     * @author chenzq
+     * @date 2019年5月9日 下午9:30:28
      * @param ip
      * @param port
      * @return
@@ -44,14 +59,33 @@ public class Bootstrap {
     public ChannelFuture connect(String ip, int port) throws Exception {
     	
     	logger.info("connect to server: {}:{}", ip, port);
-    	SocketChannel channel = SocketChannel.open();
     	channel.configureBlocking(false);
+    	// 异步连接服务器，并注册connect事件和初始化管道handler链
 		return executeChannel(channel, new InetSocketAddress(ip, port));
     }
     
     /**
-     * 注册channel初始化
-     * 
+     * @Description: 设置socket属性
+     * @author chenzq
+     * @date 2019年5月9日 下午8:45:25
+     * @param option
+     * @param value
+     * @return
+     */
+    public <T> Bootstrap option(SocketOption<T> option, T value) throws IOException {
+        
+        logger.info("set option: {}:{}", option.name(), value);
+        if (!options.contains(option)) {
+            throw new IllegalArgumentException("option not supported!");
+        }
+        this.channel.setOption(option, value);
+        return this;
+    }
+
+    /**
+     * @Description: 注册channel handler
+     * @author chenzq
+     * @date 2019年5月9日 下午9:30:40
      * @param initializer
      * @return
      */
@@ -64,11 +98,11 @@ public class Bootstrap {
     
     // 连接服务器，返回ChannelFuture
     private ChannelFuture executeChannel(final SocketChannel channel, final InetSocketAddress localAddress) throws Exception {
-    	
-    	final DefaultChannelFuture future = new DefaultChannelFuture(ChannelPipeline.buildChannelPipeline(this.group, channel));
-    	Callable<Void> callable = new Callable<Void>() {
-			@Override
-			public Void call() throws Exception {
+
+        final DefaultChannelFuture future = new DefaultChannelFuture(ChannelPipeline.buildChannelPipeline(this.group, channel));
+        Callable<Void> callable = new Callable<Void>() {
+            @Override
+            public Void call() throws Exception {
 				// 连接server
 				channel.connect(localAddress);
 				//获取一个worker线程

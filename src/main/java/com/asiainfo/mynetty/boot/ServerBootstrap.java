@@ -2,7 +2,10 @@ package com.asiainfo.mynetty.boot;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.SocketOption;
 import java.nio.channels.ServerSocketChannel;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.Callable;
 
 import org.slf4j.Logger;
@@ -29,31 +32,63 @@ public class ServerBootstrap {
 
 	final Logger logger = LoggerFactory.getLogger(getClass());
 	
+	private static Set<SocketOption<?>> options = new HashSet<>(8);
+	static {
+	    //options.add(ChannelOption.SO_BACKLOG);
+	    //options.add(ChannelOption.SO_TIMEOUT);
+	    options.add(ChannelOption.SO_KEEPALIVE);
+	    options.add(ChannelOption.SO_REUSEADDR);
+	    options.add(ChannelOption.TCP_NODELAY);
+	}
+	
     private EventLoopGroup group;
-
-    public ServerBootstrap(EventLoopGroup group) {
+    private ServerSocketChannel ssChannel;
+    public ServerBootstrap(EventLoopGroup group) throws IOException {
         this.group = group;
+        // 打开一个ServerSocket通道
+        this.ssChannel = ServerSocketChannel.open();
     }
 
     /**
-     * 绑定端口
-     *
+     * @Description: 绑定端口
+     * @author chenzq
+     * @date 2019年5月9日 下午9:31:32
      * @param localAddress
-     * @throws IOException 
+     * @return
+     * @throws IOException
      */
     public ChannelFuture bind(final InetSocketAddress localAddress) throws IOException {
     	
     	logger.info("bind to {}", localAddress);
-    	// 获得一个ServerSocket通道
-    	ServerSocketChannel ssChannel = ServerSocketChannel.open();
     	// 设置通道为非阻塞
     	ssChannel.configureBlocking(false);
+    	// 异步绑定端口并注册accept事件
         return executeServerChannel(ssChannel, localAddress);
     }
     
     /**
-     * 注册channel初始化
-     * 
+     * @Description: 设置socket属性
+     * @author chenzq
+     * @date 2019年5月9日 下午8:45:25
+     * @param option
+     * @param value
+     * @return
+     * @throws IOException 
+     */
+    public <T> ServerBootstrap option(SocketOption<T> option, T value) throws IOException {
+        
+        logger.info("set option: {}:{}", option.name(), value);
+        if (!options.contains(option)) {
+            throw new IllegalArgumentException("option not supported!");
+        }
+        this.ssChannel.setOption(option, value);
+        return this;
+    }
+    
+    /**
+     * @Description: 注册channel handler
+     * @author chenzq
+     * @date 2019年5月9日 下午9:31:12
      * @param initializer
      * @return
      */
@@ -64,7 +99,7 @@ public class ServerBootstrap {
     	return this;
     }
     
-    // 启动服务器
+    // 异步绑定端口并注册accept事件
     private ChannelFuture executeServerChannel(final ServerSocketChannel ssChannel, final InetSocketAddress localAddress) {
     	
     	final DefaultChannelFuture future = new DefaultChannelFuture(new ChannelPipeline(ssChannel));

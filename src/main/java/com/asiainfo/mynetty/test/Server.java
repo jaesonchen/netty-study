@@ -20,13 +20,6 @@ import com.asiainfo.util.ThreadPoolUtils;
  */
 public class Server {
 
-	/** 
-	 * @Description: TODO
-	 * 
-	 * @param args
-	 * @throws IOException 
-	 * @throws InterruptedException 
-	 */
 	public static void main(String[] args) throws Exception {
 
 		EventLoopGroup group = new EventLoopGroup(
@@ -40,6 +33,7 @@ public class Server {
 			    ch.addHandler(new SecondServerInboundHandler());
 				ch.addHandler(new ServerInboundHandler());
 			}});
+		
 		ChannelFuture f = b.bind(new InetSocketAddress(8080));
 		f.addListener(new ChannelFutureListener() {
 			@Override

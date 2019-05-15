@@ -3,6 +3,7 @@ package com.asiainfo.mynetty.test;
 import java.io.IOException;
 
 import com.asiainfo.mynetty.boot.Bootstrap;
+import com.asiainfo.mynetty.boot.ChannelOption;
 import com.asiainfo.mynetty.eventloop.EventLoopGroup;
 import com.asiainfo.mynetty.future.ChannelFuture;
 import com.asiainfo.mynetty.future.ChannelFutureListener;
@@ -19,13 +20,6 @@ import com.asiainfo.util.ThreadPoolUtils;
  */
 public class Client {
 
-	/** 
-	 * @Description: TODO
-	 * 
-	 * @param args
-	 * @throws IOException 
-	 * @throws InterruptedException 
-	 */
 	public static void main(String[] args) throws Exception {
 
 		EventLoopGroup group = new EventLoopGroup(ThreadPoolUtils.getInstance().cachedThreadPool(), 1);
@@ -34,7 +28,8 @@ public class Client {
 			@Override
 			public void initChannel(ChannelPipeline ch) throws Exception {
 				ch.addHandler(new ClientInboundHandler());
-			}});
+			}})
+        .option(ChannelOption.SO_KEEPALIVE, true);
 		ChannelFuture f = b.connect("localhost", 8080);
 		f.addListener(new ChannelFutureListener() {
 			@Override

@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * 
- * @Description: selector线程管理者
+ * @Description: selector线程管理者，如果只监听一个端口，实际上只需要一个boss线程
  * 
  * @author       zq
  * @date         2017年10月5日  上午10:32:50
@@ -32,13 +32,23 @@ public class EventLoopGroup {
 	private final AtomicInteger workerIndex = new AtomicInteger();
 	private Worker[] workers;
 
-	public EventLoopGroup(Executor worker, int workNum) {
-		initWorker(worker, workNum);
+	public EventLoopGroup(Executor worker) {
+	    initWorker(worker, Runtime.getRuntime().availableProcessors() * 2);
 	}
-	
+	public EventLoopGroup(Executor worker, int workNum) {
+		initWorker(worker, workNum < 1 ? Runtime.getRuntime().availableProcessors() * 2 : workNum);
+	}
+	public EventLoopGroup(Executor boss, Executor worker) {
+	    initBoss(boss, 1);
+        initWorker(worker, Runtime.getRuntime().availableProcessors() * 2);
+	}
+	public EventLoopGroup(Executor boss, Executor worker, int workNum) {
+        initBoss(boss, 1);
+        initWorker(worker, workNum < 1 ? Runtime.getRuntime().availableProcessors() * 2 : workNum);
+    }
 	public EventLoopGroup(Executor boss, Executor worker, int bossNum, int workNum) {
-		initBoss(boss, bossNum);
-		initWorker(worker, workNum);
+		initBoss(boss, bossNum < 1 ? 1 : bossNum);
+		initWorker(worker, workNum < 1 ? Runtime.getRuntime().availableProcessors() * 2 : workNum);
 	}
 
 	/**
